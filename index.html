@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Anthro Group US Store Heat Map</title>
+<title>URBN US Store Heat Map — YTD July</title>
 <style>
 :root{color-scheme:light;}
 *{box-sizing:border-box;margin:0;padding:0;}
@@ -198,7 +198,7 @@ body{font-family:system-ui,-apple-system,sans-serif;background:#fff;color:#111;p
        leaderboard by halo lift (undoable — delete this button, the
        #halo-insights-panel div below, and buildHaloInsights()/
        advToggleHaloInsights() to remove) -->
-  <button type="button" class="fbtn" id="btn-adv-halo-insights" onclick="advToggleHaloInsights()">▦ Halo insights</button>
+  <button type="button" class="fbtn" id="btn-adv-halo-insights" onclick="advToggleHaloInsights()" style="display:none;">▦ Halo insights</button>
   <!-- ADV-FEATURE-END -->
 </div>
 <!-- ADV-FEATURE-END -->
@@ -1736,6 +1736,22 @@ window.switchView=function(val){
   // delete this block and updateBrandOptionsForView() to remove)
   updateBrandOptionsForView(val);
   // ADV-FEATURE-END
+  // ADV-FEATURE-START: only show the "Halo insights" button in the DTC Halo
+  // Effect view — unlike the other rollup buttons (which stay visible across
+  // views and just show a "not available" message when opened), this one is
+  // fully halo-specific, so it's hidden entirely elsewhere. Uses the button's
+  // own 'active' class (kept in sync by advToggleHaloInsights) to detect
+  // whether the panel is currently open, so leaving the view also closes it
+  // cleanly instead of leaving it open-but-hidden (undoable — revert to
+  // always showing #btn-adv-halo-insights, i.e. delete this block, to remove)
+  const haloInsightsBtn=document.getElementById('btn-adv-halo-insights');
+  if(haloInsightsBtn){
+    if(val!=='halo' && haloInsightsBtn.classList.contains('active') && typeof window.advToggleHaloInsights==='function'){
+      window.advToggleHaloInsights();
+    }
+    haloInsightsBtn.style.display = (val==='halo') ? '' : 'none';
+  }
+  // ADV-FEATURE-END
   const v=VIEWS[val];
   updateViewUI(v);
   buildFilters(v);
@@ -2239,6 +2255,11 @@ Promise.resolve(US_ATLAS_STATES_10M).then(us=>{
       if(periodSelRow) periodSelRow.style.display = (view==='nso' || view==='halo') ? 'none' : '';
       currentView=view; activeFilters.clear();
       updateBrandOptionsForView(view);
+      // ADV-FEATURE-START: apply the same Halo insights button visibility rule
+      // from permalink state (undoable — delete to remove)
+      const haloInsightsBtn=document.getElementById('btn-adv-halo-insights');
+      if(haloInsightsBtn) haloInsightsBtn.style.display = (view==='halo') ? '' : 'none';
+      // ADV-FEATURE-END
       updateViewUI(VIEWS[view]);
       buildFilters(VIEWS[view]);
       if(plottable) renderDots(VIEWS[view]);
