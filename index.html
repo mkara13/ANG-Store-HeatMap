@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Anthro Group US Store Heat Map</title>
+<title>URBN US Store Heat Map — YTD July</title>
 <style>
 :root{color-scheme:light;}
 *{box-sizing:border-box;margin:0;padding:0;}
@@ -2039,6 +2039,35 @@ Promise.resolve(US_ATLAS_STATES_10M).then(us=>{
     });
   });
 
+  // ADV-FEATURE-START: multi-year TTM trend data for the trend sparkline —
+  // the 4-Wall Performance TTM view was reusing STORE_TIMESERIES above (fixed
+  // Feb-Jul FY27 monthly data), so the sparkline showed the exact same graph
+  // no matter which TTM year (FY19-FY27) was selected in the period dropdown.
+  // This builds a separate FY19-FY27 annual series per store from the TTM
+  // store arrays that already exist, so the TTM view's sparkline actually
+  // reflects a real multi-year trend instead of staying frozen (undoable —
+  // delete this block and revert renderSparkline's source-picking logic below
+  // to remove).
+  const ADV_TTM_YEARS = [
+    {label:'FY19', stores: FW_STORES_TTM_FY19},
+    {label:'FY20', stores: FW_STORES_TTM_FY20},
+    {label:'FY21', stores: FW_STORES_TTM_FY21},
+    {label:'FY22', stores: FW_STORES_TTM_FY22},
+    {label:'FY23', stores: FW_STORES_TTM_FY23},
+    {label:'FY24', stores: FW_STORES_TTM_FY24},
+    {label:'FY25', stores: FW_STORES_TTM_FY25},
+    {label:'FY26', stores: FW_STORES_TTM_FY26},
+    {label:'FY27', stores: FW_STORES_TTM_FY27},
+  ];
+  const STORE_TIMESERIES_TTM = {};
+  ADV_TTM_YEARS.forEach(y=>{
+    y.stores.forEach(d=>{
+      if(!STORE_TIMESERIES_TTM[d.num]) STORE_TIMESERIES_TTM[d.num]=[];
+      STORE_TIMESERIES_TTM[d.num].push({month:y.label, w:d.w});
+    });
+  });
+  // ADV-FEATURE-END
+
   // Builds the filled-area segments under/over the zero baseline, splitting
   // at each zero-crossing so a store that dips negative mid-trend gets a
   // red-shaded stretch and a green-shaded stretch instead of one flat color.
@@ -2062,7 +2091,13 @@ Promise.resolve(US_ATLAS_STATES_10M).then(us=>{
   window.renderSparkline = function(d){
     const el = document.getElementById('tt-spark');
     if(!el) return;
-    const series = STORE_TIMESERIES[d.num];
+    // ADV-FEATURE-START: pick the FY19-27 TTM series in the 4-Wall Performance
+    // TTM view instead of the fixed Feb-Jul current-year series, so the graph
+    // actually reflects what's being viewed instead of showing the same
+    // Feb-Jul FY27 data no matter which TTM period is selected (undoable —
+    // revert to `const series = STORE_TIMESERIES[d.num];` to remove)
+    const series = (currentView==='fourwallttm' ? STORE_TIMESERIES_TTM : STORE_TIMESERIES)[d.num];
+    // ADV-FEATURE-END
     if(!series || series.length<2){ el.innerHTML=''; return; }
     const w=140,h=30,pad=3;
     const vals=series.map(p=>p.w);
